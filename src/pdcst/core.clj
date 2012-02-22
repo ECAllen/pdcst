@@ -9,3 +9,5 @@
    (zip/node loc)
    (prnln (zip/node))
   (recur (zip/next loc)))))
+
+; added to test
