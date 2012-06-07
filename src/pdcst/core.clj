@@ -18,8 +18,16 @@
 ; (def url "http://reason.tv/podcast/index.xml")
 (def url "index.xml") 
 
-(defn get-items [url]
-  (for [x (xml-seq (xml/parse url))
+(def x (xml/parse url))
+
+(def z (zip/xml-zip (xml/parse url)))
+
+(defn get-title [x] 
+  (let [title (first (zxml/xml-> (zip/xml-zip x) :channel :title zxml/text))]
+    (clojure.string/replace title #" |\." "-")))
+
+(defn get-items [z]
+  (for [x (xml-seq z) 
         :when (= :item (:tag x))]
     (:content x)))
 
@@ -57,11 +65,14 @@
       (.exists f)      "other" 
       :else            "non-existent")))
 
-(defn check-dir [dir]
+(defn check-conf-dir [dir]
   (let [f (kind dir)]
     (cond
       (= f "file") "is file create dir handle this?"
-      (= f "non-existent") (create-conf-dir) 
+      (= f "non-existent") (do 
+                             (create-conf-dir) 
+                             (create-download-dir))
       :else "ok")))
+
 
 
