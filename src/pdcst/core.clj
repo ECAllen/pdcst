@@ -20,26 +20,19 @@
 (defn get-urls [subscriptions]
   (string/split-lines (slurp subscriptions)))
 
-; (def url "http://reason.tv/podcast/index.xml")
-
-; (def pdcst-info (map get-pdcst-info (get-items x)))
-
-; (def z (zip/xml-zip (xml/parse url)))
-
-; (def x (xml/parse url))
-
 (defn get-items [url]
   (for [x (xml-seq (xml/parse url))
         :when (= :item (:tag x))]
     (:content x)))
 
+(defn get-filename [txt]
+  (clojure.string/replace txt #" |\.|\'|\"|\&|\?" "-")) 
+
 (defn get-pdcst-info [item]
   (let [[{title :tag [title-txt] :content} 
        {enclosure :tag {url :url} :attrs } 
        {desc :tag [desc-txt] :content}] item ] 
-          into {title title-txt enclosure url desc desc-txt "download?" false}))
-
-; (def pdcst-info (map get-pdcst-info (get-items x)))
+          into {title title-txt enclosure url desc desc-txt :filename (get-filename title-txt) :download? true}))
 
 (defn get-title [url] 
   (let [title (first (zxml/xml-> (zip/xml-zip (xml/parse url)) :channel :title zxml/text))]
@@ -78,13 +71,17 @@
                              (create-download-dir))
       :else "ok")))
 
-;    (.write w (client/get "http://cloudfront-reasontv-video.reason.com/reasontv_audio_2520.mp3"))))
-
 (defn download [filename url]
   (with-open [rdr (io/reader url)
               wrt (io/writer filename)]
     (io/copy rdr wrt)))
 
-; TODO replace maps with ->
 ; (map create-pdcst-dir (map get-title (get-urls subscriptions)))
+
+; TODO get rid of first
+(def pdcst-info (map get-pdcst-info (first (map get-items (get-urls subscriptions)))))
+
+(defn process-pdcst [item]
+  (if (= (:download? item) true) (prn (:filename item) (:enclosure item))))
+
 
